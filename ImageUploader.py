@@ -8,9 +8,6 @@ import tkinter as tk
 import customtkinter as Ctk
 from tkinterdnd2 import TkinterDnD, DND_ALL
 
-def get_path(event):
-    print(event.data)
-
 class Tk(Ctk.CTk, TkinterDnD.DnDWrapper):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -20,20 +17,114 @@ class App(Tk):
 	def __init__(self):
 		super().__init__()
 
+		self.hoverButton = 0
+
 		self.width = 1000
 		self.height = round(self.width * 9/16)
 		self.title("BitBoard Logic IDE")
 		self.geometry(f"{self.width}x{self.height}")
 		self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
-		label = Ctk.CTkLabel(self, text="➕ \nDrag & Drop Here", corner_radius=10, fg_color="blue", wraplength=300)
-		label.pack(expand=True, fill="both", padx=40, pady=40)
+		self.columnconfigure(0, weight=1)
+		self.columnconfigure(1, weight=0)
 
-		entryWidget = tk.Entry(self)
-		entryWidget.pack(padx=5, pady=5)
+		self.rowconfigure(0, weight=1)
+		self.rowconfigure(1, weight=0)
+		self.rowconfigure(2, weight=0)
 
-		label.drop_target_register(DND_ALL)
-		label.dnd_bind("<<Drop>>", get_path)
+		#---------------------------------------------------------
+		self.buttonsFrame = Ctk.CTkFrame(self)
+		self.buttonsFrame.grid(row=0, column=0, sticky="wens", padx = (10, 5), pady = (10, 5), rowspan=2)
+
+		self.buttons = []
+		for y in range(3):
+			self.buttonsFrame.rowconfigure(y, weight=1)
+			for x in range(4):
+				self.buttonsFrame.columnconfigure(x, weight=1)
+				button = Ctk.CTkButton(self.buttonsFrame, text="", image=Ctk.CTkImage(Image.open(f"images/{x+y*4}.png").resize((16, 16), 0), size=(100, 100)))
+				button.grid(row=y, column=x)
+				button.drop_target_register(DND_ALL)
+				button.dnd_bind("<<Drop>>", getattr(self, f"button{x+y*4}dnd"))
+				self.buttons.append(button)
+
+		#---------------------------------------------------------
+		self.buttonOptionsFrame = Ctk.CTkFrame(self)
+		self.buttonOptionsFrame.grid(row=0, column=1, sticky="wens", padx = (5, 10), pady = (10, 5))
+
+		#---------------------------------------------------------
+		self.optionsFrame = Ctk.CTkFrame(self)
+		self.optionsFrame.grid(row=1, column=1, sticky="wens", padx = (5, 10), pady = 5)
+
+		self.backgroundLabel = Ctk.CTkLabel(self.optionsFrame, text="Background Color")
+		self.backgroundLabel.grid(row = 0, column=0, padx=(10, 5))
+		self.backgroundEntry = Ctk.CTkEntry(self.optionsFrame)
+		self.backgroundEntry.insert(0, "#fcba03")
+		self.backgroundEntry.grid(row = 0, column=1, padx=(0, 10))
+
+		#---------------------------------------------------------
+		self.functionsFrame = Ctk.CTkFrame(self)
+		self.functionsFrame.grid(row=2, column=0, sticky="wens", padx = (5, 10), pady = 5, columnspan=2)
+
+		self.functionsFrame.columnconfigure(0, weight=1)
+		self.functionsFrame.columnconfigure(1, weight=1)
+		self.functionsFrame.columnconfigure(2, weight=1)
+
+		self.updateKeysButton = Ctk.CTkButton(self.functionsFrame, text = "Update Keys", height=100, font = Ctk.CTkFont(family='Helvetica', size=36, weight='bold'))
+		self.updateKeysButton.grid(row=0, column=0, padx=10, pady=10, rowspan = 3)
+		self.updateImagesButton = Ctk.CTkButton(self.functionsFrame, text = "Update Images", height=100, font = Ctk.CTkFont(family='Helvetica', size=36, weight='bold'))
+		self.updateImagesButton.grid(row=0, column=1, padx=10, pady=10, rowspan = 3)
+		self.updateAllButton = Ctk.CTkButton(self.functionsFrame, text="Update All", font = Ctk.CTkFont(family='Helvetica', size=36, weight='bold'))
+		self.updateAllButton.grid(row=0, column = 2, padx=10, pady=10)
+
+		self.uploadLabel = Ctk.CTkLabel(self.functionsFrame, text="Upload In Progress")
+		#self.uploadLabel.grid(row = 1, column = 2, padx=10, pady=(10, 0))
+		self.uploadProgressBar = Ctk.CTkProgressBar(self.functionsFrame)
+		self.uploadProgressBar.set(0)
+		#self.uploadProgressBar.grid(row = 2, column=2, padx=10, pady=(0, 10))
+
+	def button0dnd(self, event):
+		self.hoverButton = 0
+		self.getPathForButton(event)
+	def button1dnd(self, event):
+		self.hoverButton = 1
+		self.getPathForButton(event)
+	def button2dnd(self, event):
+		self.hoverButton = 2
+		self.getPathForButton(event)
+	def button3dnd(self, event):
+		self.hoverButton = 3
+		self.getPathForButton(event)
+	def button4dnd(self, event):
+		self.hoverButton = 4
+		self.getPathForButton(event)
+	def button5dnd(self, event):
+		self.hoverButton = 5
+		self.getPathForButton(event)
+	def button6dnd(self, event):
+		self.hoverButton = 6
+		self.getPathForButton(event)
+	def button7dnd(self, event):
+		self.hoverButton = 7
+		self.getPathForButton(event)
+	def button8dnd(self, event):
+		self.hoverButton = 8
+		self.getPathForButton(event)
+	def button9dnd(self, event):
+		self.hoverButton = 9
+		self.getPathForButton(event)
+	def button10dnd(self, event):
+		self.hoverButton = 10
+		self.getPathForButton(event)
+	def button11dnd(self, event):
+		self.hoverButton = 11
+		self.getPathForButton(event)
+
+	def getPathForButton(self, event):
+		print(event.data)
+		print(self.hoverButton)
+		img = Image.open(event.data)
+		self.buttons[self.hoverButton].configure(image=Ctk.CTkImage(img.resize((16, 16), 0), size=(100, 100)))
+		img.save(f"images/{self.hoverButton}.png")
 
 	def loadSettings(self):
 		pass
@@ -44,6 +135,7 @@ class App(Tk):
 	def on_closing(self):
 	    self.saveSettings()
 	    self.destroy()
+	    exit()
 
 KEY_F1 = 0xC2
 KEY_F2 = 0xC3
