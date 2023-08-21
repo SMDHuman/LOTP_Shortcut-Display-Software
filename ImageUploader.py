@@ -7,6 +7,7 @@ import win32com.client
 import tkinter as tk
 import customtkinter as Ctk
 from tkinterdnd2 import TkinterDnD, DND_ALL
+import webcolors
 
 class Tk(Ctk.CTk, TkinterDnD.DnDWrapper):
     def __init__(self, *args, **kwargs):
@@ -18,6 +19,9 @@ class App(Tk):
 		super().__init__()
 
 		self.hoverButton = 0
+		self.selectedButton = 0
+		self.selectedBgColor = webcolors.name_to_hex("cyan")
+		self.selectedBtColor = webcolors.name_to_hex("pink")
 
 		self.width = 1000
 		self.height = round(self.width * 9/16)
@@ -33,21 +37,6 @@ class App(Tk):
 		self.rowconfigure(2, weight=0)
 
 		#---------------------------------------------------------
-		self.buttonsFrame = Ctk.CTkFrame(self)
-		self.buttonsFrame.grid(row=0, column=0, sticky="wens", padx = (10, 5), pady = (10, 5), rowspan=2)
-
-		self.buttons = []
-		for y in range(3):
-			self.buttonsFrame.rowconfigure(y, weight=1)
-			for x in range(4):
-				self.buttonsFrame.columnconfigure(x, weight=1)
-				button = Ctk.CTkButton(self.buttonsFrame, text="", image=Ctk.CTkImage(Image.open(f"images/{x+y*4}.png").resize((16, 16), 0), size=(100, 100)))
-				button.grid(row=y, column=x)
-				button.drop_target_register(DND_ALL)
-				button.dnd_bind("<<Drop>>", getattr(self, f"button{x+y*4}dnd"))
-				self.buttons.append(button)
-
-		#---------------------------------------------------------
 		self.buttonOptionsFrame = Ctk.CTkFrame(self)
 		self.buttonOptionsFrame.grid(row=0, column=1, sticky="wens", padx = (5, 10), pady = (10, 5))
 
@@ -58,8 +47,30 @@ class App(Tk):
 		self.backgroundLabel = Ctk.CTkLabel(self.optionsFrame, text="Background Color")
 		self.backgroundLabel.grid(row = 0, column=0, padx=(10, 5))
 		self.backgroundEntry = Ctk.CTkEntry(self.optionsFrame)
+		self.backgroundEntry.bind("<Key>", self.backgroundEntered)
 		self.backgroundEntry.insert(0, "#fcba03")
 		self.backgroundEntry.grid(row = 0, column=1, padx=(0, 10))
+
+		#---------------------------------------------------------
+		self.buttonsFrame = Ctk.CTkFrame(self, fg_color=self.selectedBgColor)
+		self.buttonsFrame.grid(row=0, column=0, sticky="wens", padx = (10, 5), pady = (10, 5), rowspan=2)
+
+		self.buttons = []
+		for y in range(3):
+			self.buttonsFrame.rowconfigure(y, weight=1)
+			for x in range(4):
+				self.buttonsFrame.columnconfigure(x, weight=1)
+				png = Image.open(f"images/{x+y*4}.png").convert('RGBA')
+
+				background = Image.new('RGBA', png.size, self.selectedBtColor)
+				alpha_composite = Image.alpha_composite(background, png)
+
+				button = Ctk.CTkButton(self.buttonsFrame, text="", command=getattr(self, f"button{x+y*4}press"), image=Ctk.CTkImage(alpha_composite.resize((16, 16), 0), size=(100, 100)), fg_color=self.selectedBtColor)
+				button.grid(row=y, column=x)
+				button.drop_target_register(DND_ALL)
+				button.dnd_bind("<<Drop>>", getattr(self, f"button{x+y*4}dnd"))
+				exec(f"self.button{x+y*4}OptionFrame = Ctk.CTkScrollableFrame(self.buttonOptionsFrame, label_text='Buton {x+y*4}')")
+				self.buttons.append(button)
 
 		#---------------------------------------------------------
 		self.functionsFrame = Ctk.CTkFrame(self)
@@ -81,6 +92,89 @@ class App(Tk):
 		self.uploadProgressBar = Ctk.CTkProgressBar(self.functionsFrame)
 		self.uploadProgressBar.set(0)
 		#self.uploadProgressBar.grid(row = 2, column=2, padx=10, pady=(0, 10))
+
+	def backgroundEntered(self, event):
+
+		if(event.keycode == 13):
+			entry = self.backgroundEntry.get()
+			oldColor = self.selectedBgColor
+			try:
+				if(entry[0] == "#"):
+					self.selectedBgColor = entry
+				elif("," in entry):
+					self.selectedBgColor = webcolors.rgb_to_hex([int(i) for i in entry.replace(" ", "").split(",")])
+				else:
+					self.selectedBgColor = webcolors.name_to_hex(entry)
+
+				self.buttonsFrame.configure(fg_color = self.selectedBgColor)
+				for button in self.buttons:
+					button.configure(fg_color = self.selectedBgColor)
+			except:
+				self.selectedBgColor = oldColor
+				self.backgroundEntry.delete(0, tk.END)
+
+				self.buttonsFrame.configure(fg_color = self.selectedBgColor)
+				for button in self.buttons:
+					button.configure(fg_color = self.selectedBgColor)
+
+
+	def forgetLastButtonOptions(self):
+		try:
+			exec(f"self.button{self.selectedButton}OptionFrame.pack_forget()")
+		except:
+			print("hayat")
+
+	def packCurrentSelectedButton(self):
+		exec(f"self.button{self.selectedButton}OptionFrame.pack(expand = True, fill = Ctk.BOTH, padx=10, pady=10)")
+
+	def button0press(self):
+		self.forgetLastButtonOptions()
+		self.selectedButton = 0
+		self.packCurrentSelectedButton()
+	def button1press(self):
+		self.forgetLastButtonOptions()
+		self.selectedButton = 1
+		self.packCurrentSelectedButton()
+	def button2press(self):
+		self.forgetLastButtonOptions()
+		self.selectedButton = 2
+		self.packCurrentSelectedButton()
+	def button3press(self):
+		self.forgetLastButtonOptions()
+		self.selectedButton = 3
+		self.packCurrentSelectedButton()
+	def button4press(self):
+		self.forgetLastButtonOptions()
+		self.selectedButton = 4
+		self.packCurrentSelectedButton()
+	def button5press(self):
+		self.forgetLastButtonOptions()
+		self.selectedButton = 5
+		self.packCurrentSelectedButton()
+	def button6press(self):
+		self.forgetLastButtonOptions()
+		self.selectedButton = 6
+		self.packCurrentSelectedButton()
+	def button7press(self):
+		self.forgetLastButtonOptions()
+		self.selectedButton = 7
+		self.packCurrentSelectedButton()
+	def button8press(self):
+		self.forgetLastButtonOptions()
+		self.selectedButton = 8
+		self.packCurrentSelectedButton()
+	def button9press(self):
+		self.forgetLastButtonOptions()
+		self.selectedButton = 9
+		self.packCurrentSelectedButton()
+	def button10press(self):
+		self.forgetLastButtonOptions()
+		self.selectedButton = 10
+		self.packCurrentSelectedButton()
+	def button11press(self):
+		self.forgetLastButtonOptions()
+		self.selectedButton = 11
+		self.packCurrentSelectedButton()
 
 	def button0dnd(self, event):
 		self.hoverButton = 0
