@@ -1,4 +1,4 @@
-from PIL import Image
+from PIL import Image, ImageTk
 from  PIL import ImageOps
 import pyperclip
 from serial import Serial, SerialException
@@ -48,8 +48,15 @@ class App(Tk):
 		self.backgroundLabel.grid(row = 0, column=0, padx=(10, 5))
 		self.backgroundEntry = Ctk.CTkEntry(self.optionsFrame)
 		self.backgroundEntry.bind("<Key>", self.backgroundEntered)
-		self.backgroundEntry.insert(0, "#fcba03")
+		self.backgroundEntry.insert(0, self.selectedBgColor)
 		self.backgroundEntry.grid(row = 0, column=1, padx=(0, 10))
+
+		self.buttonColorLabel = Ctk.CTkLabel(self.optionsFrame, text="Buttons Color")
+		self.buttonColorLabel.grid(row = 1, column=0, padx=(10, 5))
+		self.buttonColorEntry = Ctk.CTkEntry(self.optionsFrame)
+		self.buttonColorEntry.bind("<Key>", self.buttonColorEntered)
+		self.buttonColorEntry.insert(0, self.selectedBtColor)
+		self.buttonColorEntry.grid(row = 1, column=1, padx=(0, 10))
 
 		#---------------------------------------------------------
 		self.buttonsFrame = Ctk.CTkFrame(self, fg_color=self.selectedBgColor)
@@ -62,10 +69,14 @@ class App(Tk):
 				self.buttonsFrame.columnconfigure(x, weight=1)
 				png = Image.open(f"images/{x+y*4}.png").convert('RGBA')
 
-				background = Image.new('RGBA', png.size, self.selectedBtColor)
-				alpha_composite = Image.alpha_composite(background, png)
+				png = Image.open(f"images/{x+y*4}.png").convert('RGBA').resize((16, 16), 0)
 
-				button = Ctk.CTkButton(self.buttonsFrame, text="", command=getattr(self, f"button{x+y*4}press"), image=Ctk.CTkImage(alpha_composite.resize((16, 16), 0), size=(100, 100)), fg_color=self.selectedBtColor)
+				background = Image.new('RGBA', (16, 16), self.selectedBtColor)
+				alpha_composite = Image.alpha_composite(background, png).resize((100, 100), 0)
+
+
+				button = Ctk.CTkButton(self.buttonsFrame, text="", command=getattr(self, f"button{x+y*4}press"), fg_color=self.selectedBgColor, image=ImageTk.PhotoImage(alpha_composite))
+
 				button.grid(row=y, column=x)
 				button.drop_target_register(DND_ALL)
 				button.dnd_bind("<<Drop>>", getattr(self, f"button{x+y*4}dnd"))
@@ -85,13 +96,13 @@ class App(Tk):
 		self.updateImagesButton = Ctk.CTkButton(self.functionsFrame, text = "Update Images", height=100, font = Ctk.CTkFont(family='Helvetica', size=36, weight='bold'))
 		self.updateImagesButton.grid(row=0, column=1, padx=10, pady=10, rowspan = 3)
 		self.updateAllButton = Ctk.CTkButton(self.functionsFrame, text="Update All", font = Ctk.CTkFont(family='Helvetica', size=36, weight='bold'))
-		self.updateAllButton.grid(row=0, column = 2, padx=10, pady=10)
+		self.updateAllButton.grid(row=0, column = 2, padx=10, pady=10, rowspan = 3)
 
 		self.uploadLabel = Ctk.CTkLabel(self.functionsFrame, text="Upload In Progress")
-		#self.uploadLabel.grid(row = 1, column = 2, padx=10, pady=(10, 0))
+		self.uploadLabel.grid(row = 1, column = 3, padx=10, pady=(10, 0))
 		self.uploadProgressBar = Ctk.CTkProgressBar(self.functionsFrame)
 		self.uploadProgressBar.set(0)
-		#self.uploadProgressBar.grid(row = 2, column=2, padx=10, pady=(0, 10))
+		self.uploadProgressBar.grid(row = 2, column=3, padx=10, pady=(0, 10))
 
 	def backgroundEntered(self, event):
 
@@ -117,6 +128,37 @@ class App(Tk):
 				for button in self.buttons:
 					button.configure(fg_color = self.selectedBgColor)
 
+
+	def buttonColorEntered(self, event):
+		if(event.keycode == 13):
+			entry = self.buttonColorEntry.get()
+			oldColor = self.selectedBtColor
+			try:
+				if(entry[0] == "#"):
+					self.selectedBtColor = entry
+				elif("," in entry):
+					self.selectedBtColor = webcolors.rgb_to_hex([int(i) for i in entry.replace(" ", "").split(",")])
+				else:
+					self.selectedBtColor = webcolors.name_to_hex(entry)
+
+				for i, button in enumerate(self.buttons):
+					png = Image.open(f"images/{i}.png").convert('RGBA').resize((16, 16), 0)
+
+					background = Image.new('RGBA', (16, 16), self.selectedBtColor)
+					alpha_composite = Image.alpha_composite(background, png).resize((100, 100), 0)
+
+					button.configure(image=ImageTk.PhotoImage(alpha_composite))
+			except:
+				self.selectedBtColor = oldColor
+				self.buttonColorEntry.delete(0, tk.END)
+
+				for i, button in enumerate(self.buttons):
+					png = Image.open(f"images/{i}.png").convert('RGBA').resize((16, 16), 0)
+
+					background = Image.new('RGBA', (16, 16), self.selectedBtColor)
+					alpha_composite = Image.alpha_composite(background, png).resize((100, 100), 0)
+
+					button.configure(image=ImageTk.PhotoImage(alpha_composite))
 
 	def forgetLastButtonOptions(self):
 		try:
@@ -216,9 +258,14 @@ class App(Tk):
 	def getPathForButton(self, event):
 		print(event.data)
 		print(self.hoverButton)
-		img = Image.open(event.data)
-		self.buttons[self.hoverButton].configure(image=Ctk.CTkImage(img.resize((16, 16), 0), size=(100, 100)))
-		img.save(f"images/{self.hoverButton}.png")
+
+		png = Image.open(event.data).convert('RGBA').resize((16, 16), 0)
+
+		background = Image.new('RGBA', (16, 16), self.selectedBtColor)
+		alpha_composite = Image.alpha_composite(background, png).resize((100, 100), 0)
+
+		self.buttons[self.hoverButton].configure(image=ImageTk.PhotoImage(alpha_composite))
+		png.save(f"images/{self.hoverButton}.png")
 
 	def loadSettings(self):
 		pass
