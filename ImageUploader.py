@@ -18,6 +18,10 @@ class App(Tk):
 	def __init__(self):
 		super().__init__()
 
+		self.after(1000, self.update)
+		self.ports = {}
+		self.updatePorts()
+
 		self.hoverButton = 0
 		self.selectedButton = 0
 		self.selectedBgColor = webcolors.name_to_hex("cyan")
@@ -49,20 +53,32 @@ class App(Tk):
 		self.backgroundEntry = Ctk.CTkEntry(self.optionsFrame)
 		self.backgroundEntry.bind("<Key>", self.backgroundEntered)
 		self.backgroundEntry.insert(0, self.selectedBgColor)
-		self.backgroundEntry.grid(row = 0, column=1, padx=(0, 10))
+		self.backgroundEntry.grid(row = 0, column=1, padx=(0, 10), sticky="ew")
 
 		self.buttonColorLabel = Ctk.CTkLabel(self.optionsFrame, text="Buttons Color")
 		self.buttonColorLabel.grid(row = 1, column=0, padx=(10, 5))
 		self.buttonColorEntry = Ctk.CTkEntry(self.optionsFrame)
 		self.buttonColorEntry.bind("<Key>", self.buttonColorEntered)
 		self.buttonColorEntry.insert(0, self.selectedBtColor)
-		self.buttonColorEntry.grid(row = 1, column=1, padx=(0, 10))
+		self.buttonColorEntry.grid(row = 1, column=1, padx=(0, 10), sticky="ew")
+
+		self.devicePortLabel = Ctk.CTkLabel(self.optionsFrame, text="Device Port")
+		self.devicePortLabel.grid(row = 2, column=0, padx=(10, 5))
+		self.devicePortEntry = Ctk.CTkOptionMenu(self.optionsFrame, values = [name + " " + self.ports[name] for name in self.ports.keys()])
+		self.devicePortEntry.grid(row = 2, column=1, padx=(0, 10))
 
 		#---------------------------------------------------------
 		self.buttonsFrame = Ctk.CTkFrame(self, fg_color=self.selectedBgColor)
 		self.buttonsFrame.grid(row=0, column=0, sticky="wens", padx = (10, 5), pady = (10, 5), rowspan=2)
 
 		self.buttons = []
+		self.buttonsOptionFrame = []
+		self.keys1Combo = []
+		self.keys2Combo = []
+		self.keys3Combo = []
+		self.delays1Entry = []
+		self.delays2Entry = []
+		self.delays3Entry = []
 		for y in range(3):
 			self.buttonsFrame.rowconfigure(y, weight=1)
 			for x in range(4):
@@ -80,29 +96,49 @@ class App(Tk):
 				button.grid(row=y, column=x)
 				button.drop_target_register(DND_ALL)
 				button.dnd_bind("<<Drop>>", getattr(self, f"button{x+y*4}dnd"))
-				exec(f"self.button{x+y*4}OptionFrame = Ctk.CTkScrollableFrame(self.buttonOptionsFrame, label_text='Buton {x+y*4}')")
+				self.buttonsOptionFrame.append(Ctk.CTkScrollableFrame(self.buttonOptionsFrame, label_text=f'Buton {x+y*4}'))
+
+				self.keys1Combo.append(Ctk.CTkComboBox(self.buttonsOptionFrame[-1]))
+				self.keys2Combo.append(Ctk.CTkComboBox(self.buttonsOptionFrame[-1]))
+				self.keys3Combo.append(Ctk.CTkComboBox(self.buttonsOptionFrame[-1]))
+				self.keys1Combo[-1].set("")
+				self.keys2Combo[-1].set("")
+				self.keys3Combo[-1].set("")
+				self.keys1Combo[-1].grid(row = 0, column = 0)
+				self.keys2Combo[-1].grid(row = 2, column = 0)
+				self.keys3Combo[-1].grid(row = 4, column = 0)
+
+				self.delays1Entry.append(Ctk.CTkEntry(self.buttonsOptionFrame[-1]))
+				self.delays2Entry.append(Ctk.CTkEntry(self.buttonsOptionFrame[-1]))
+				self.delays3Entry.append(Ctk.CTkEntry(self.buttonsOptionFrame[-1]))
+				self.delays1Entry[-1].insert(0, "0")
+				self.delays2Entry[-1].insert(0, "0")
+				self.delays3Entry[-1].insert(0, "0")
+				self.delays1Entry[-1].grid(row = 1, column = 1)
+				self.delays2Entry[-1].grid(row = 3, column = 1)
+				self.delays3Entry[-1].grid(row = 5, column = 1)
+
 				self.buttons.append(button)
 
 		#---------------------------------------------------------
 		self.functionsFrame = Ctk.CTkFrame(self)
 		self.functionsFrame.grid(row=2, column=0, sticky="wens", padx = (5, 10), pady = 5, columnspan=2)
 
-		self.functionsFrame.columnconfigure(0, weight=1)
-		self.functionsFrame.columnconfigure(1, weight=1)
-		self.functionsFrame.columnconfigure(2, weight=1)
+		for i in range(4):
+			self.functionsFrame.columnconfigure(i, weight=1)
 
-		self.updateKeysButton = Ctk.CTkButton(self.functionsFrame, text = "Update Keys", height=100, font = Ctk.CTkFont(family='Helvetica', size=36, weight='bold'))
+		self.updateKeysButton = Ctk.CTkButton(self.functionsFrame, command=self.uploadKeys, text = "Update Keys", height=100, font = Ctk.CTkFont(family='Helvetica', size=36, weight='bold'))
 		self.updateKeysButton.grid(row=0, column=0, padx=10, pady=10, rowspan = 3)
-		self.updateImagesButton = Ctk.CTkButton(self.functionsFrame, text = "Update Images", height=100, font = Ctk.CTkFont(family='Helvetica', size=36, weight='bold'))
+		self.updateImagesButton = Ctk.CTkButton(self.functionsFrame, command=self.uploadImages, text = "Update Images", height=100, font = Ctk.CTkFont(family='Helvetica', size=36, weight='bold'))
 		self.updateImagesButton.grid(row=0, column=1, padx=10, pady=10, rowspan = 3)
-		self.updateAllButton = Ctk.CTkButton(self.functionsFrame, text="Update All", font = Ctk.CTkFont(family='Helvetica', size=36, weight='bold'))
+		self.updateAllButton = Ctk.CTkButton(self.functionsFrame, command=self.uploadAll, text="Update All", height=100, font = Ctk.CTkFont(family='Helvetica', size=36, weight='bold'))
 		self.updateAllButton.grid(row=0, column = 2, padx=10, pady=10, rowspan = 3)
 
-		self.uploadLabel = Ctk.CTkLabel(self.functionsFrame, text="Upload In Progress")
-		self.uploadLabel.grid(row = 1, column = 3, padx=10, pady=(10, 0))
+		self.uploadLabel = Ctk.CTkLabel(self.functionsFrame, text="Upload In Progress", font = Ctk.CTkFont(family='Helvetica', size=20))
+		#self.uploadLabel.grid(row = 1, column = 3, padx=10, pady=(10, 0))
 		self.uploadProgressBar = Ctk.CTkProgressBar(self.functionsFrame)
 		self.uploadProgressBar.set(0)
-		self.uploadProgressBar.grid(row = 2, column=3, padx=10, pady=(0, 10))
+		#self.uploadProgressBar.grid(row = 2, column=3, padx=10, pady=(0, 10))
 
 	def backgroundEntered(self, event):
 
@@ -162,12 +198,12 @@ class App(Tk):
 
 	def forgetLastButtonOptions(self):
 		try:
-			exec(f"self.button{self.selectedButton}OptionFrame.pack_forget()")
+			self.buttonsOptionFrame[self.selectedButton].pack_forget()
 		except:
 			print("hayat")
 
 	def packCurrentSelectedButton(self):
-		exec(f"self.button{self.selectedButton}OptionFrame.pack(expand = True, fill = Ctk.BOTH, padx=10, pady=10)")
+		self.buttonsOptionFrame[self.selectedButton].pack(expand = True, fill = Ctk.BOTH, padx=10, pady=10)
 
 	def button0press(self):
 		self.forgetLastButtonOptions()
@@ -272,6 +308,36 @@ class App(Tk):
 
 	def saveSettings(self):
 		pass
+
+	def uploadKeys(self):
+		pass
+
+	def uploadImages(self):
+		pass
+
+	def uploadAll(self):
+		pass
+
+	def updatePorts(self):
+		ports = {}
+		wmi = win32com.client.GetObject("winmgmts:")
+		for serial in wmi.InstancesOf("Win32_SerialPort"):
+			port = serial.Name.split(" (")
+			port[1] = port[1][:-1]
+			ports[port[0]] = port[1]
+		if(self.ports != ports):
+			self.ports = ports.copy()
+			return(True)
+		else:
+			self.ports = ports.copy()
+			return(False)
+
+	def update(self):
+		if(self.updatePorts()):
+			print(1)
+			self.devicePortEntry.configure(values = [name + " " + self.ports[name] for name in self.ports.keys()])
+
+		self.after(500, self.update)
 
 	def on_closing(self):
 	    self.saveSettings()
