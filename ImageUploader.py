@@ -10,9 +10,9 @@ from tkinterdnd2 import TkinterDnD, DND_ALL
 import webcolors
 
 class Tk(Ctk.CTk, TkinterDnD.DnDWrapper):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.TkdndVersion = TkinterDnD._require(self)
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		self.TkdndVersion = TkinterDnD._require(self)
 
 class App(Tk):
 	def __init__(self):
@@ -67,7 +67,6 @@ class App(Tk):
 			self.buttonsFrame.rowconfigure(y, weight=1)
 			for x in range(4):
 				self.buttonsFrame.columnconfigure(x, weight=1)
-				png = Image.open(f"images/{x+y*4}.png").convert('RGBA')
 
 				png = Image.open(f"images/{x+y*4}.png").convert('RGBA').resize((16, 16), 0)
 
@@ -93,7 +92,7 @@ class App(Tk):
 
 		self.updateKeysButton = Ctk.CTkButton(self.functionsFrame, text = "Update Keys", height=100, font = Ctk.CTkFont(family='Helvetica', size=36, weight='bold'))
 		self.updateKeysButton.grid(row=0, column=0, padx=10, pady=10, rowspan = 3)
-		self.updateImagesButton = Ctk.CTkButton(self.functionsFrame, text = "Update Images", height=100, font = Ctk.CTkFont(family='Helvetica', size=36, weight='bold'))
+		self.updateImagesButton = Ctk.CTkButton(self.functionsFrame, command=self.uploadImagesFunc, text = "Update Images", height=100, font = Ctk.CTkFont(family='Helvetica', size=36, weight='bold'))
 		self.updateImagesButton.grid(row=0, column=1, padx=10, pady=10, rowspan = 3)
 		self.updateAllButton = Ctk.CTkButton(self.functionsFrame, text="Update All", font = Ctk.CTkFont(family='Helvetica', size=36, weight='bold'))
 		self.updateAllButton.grid(row=0, column = 2, padx=10, pady=10, rowspan = 3)
@@ -103,6 +102,36 @@ class App(Tk):
 		self.uploadProgressBar = Ctk.CTkProgressBar(self.functionsFrame)
 		self.uploadProgressBar.set(0)
 		self.uploadProgressBar.grid(row = 2, column=3, padx=10, pady=(0, 10))
+
+	def uploadImagesFunc(self):
+		port = []
+		ports = {}
+		wmi = win32com.client.GetObject("winmgmts:")
+		for serial in wmi.InstancesOf("Win32_SerialPort"):
+			port = serial.Name.split(" (")
+			port[1] = port[1][:-1]
+			ports[port[0]] = port[1]
+
+		com = Serial(ports['USB Seri Cihaz'], 9600)
+		for i in range(12):   
+			png = Image.open(f"images/{11-i}.png").convert('RGBA').resize((16, 16), 0)   
+			png = ImageOps.flip(png)      
+			png = ImageOps.mirror(png) 
+
+			background = Image.new('RGBA', (16, 16), self.selectedBtColor)
+			alpha_composite = Image.alpha_composite(background, png)
+			buffer = []
+			for y in range(alpha_composite.height):
+				for x in range(alpha_composite.width):
+					color = color565(*alpha_composite.getpixel((x, y)))
+					buffer.append(color >> 8)
+					buffer.append(color & 0xff)
+
+			com.write(bytearray([1]))
+			com.write(bytearray([i]))
+			com.write(bytearray(buffer))
+			com.read(1)     
+			print("Images:", i)
 
 	def backgroundEntered(self, event):
 
@@ -274,9 +303,9 @@ class App(Tk):
 		pass
 
 	def on_closing(self):
-	    self.saveSettings()
-	    self.destroy()
-	    exit()
+		self.saveSettings()
+		self.destroy()
+		exit()
 
 KEY_F1 = 0xC2
 KEY_F2 = 0xC3
@@ -303,16 +332,6 @@ KEY_F22 = 0xF9
 KEY_F23 = 0xFA
 KEY_F24 = 0xFB
 
-port = []
-ports = {}
-wmi = win32com.client.GetObject("winmgmts:")
-for serial in wmi.InstancesOf("Win32_SerialPort"):
-	port = serial.Name.split(" (")
-	port[1] = port[1][:-1]
-	ports[port[0]] = port[1]
-
-if('USB Seri Cihaz' in ports):
-	com = Serial(ports['USB Seri Cihaz'], 9600);
 
 def color565(red, green, blue, *args):
 	if(len(args) > 0 and args[0] < 127):
