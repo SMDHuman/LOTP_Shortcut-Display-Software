@@ -1,0 +1,8 @@
+Pillow
+pyperclip
+pyserial
+pywin32
+tk
+customtkinter
+tkinterdnd2
+webcolors

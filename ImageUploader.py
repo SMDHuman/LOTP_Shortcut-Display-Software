@@ -1,13 +1,28 @@
-from PIL import Image, ImageTk
-from  PIL import ImageOps
-import pyperclip
-from serial import Serial, SerialException
-from time import sleep
-import win32com.client
-import tkinter as tk
-import customtkinter as Ctk
-from tkinterdnd2 import TkinterDnD, DND_ALL
-import webcolors
+import os
+
+try:
+	from PIL import Image, ImageTk
+	from  PIL import ImageOps
+	import pyperclip
+	from serial import Serial, SerialException
+	from time import sleep
+	import win32com.client
+	import tkinter as tk
+	import customtkinter as Ctk
+	from tkinterdnd2 import TkinterDnD, DND_ALL
+	import webcolors
+except:
+	os.system("pip install -r requirements.txt")
+	from PIL import Image, ImageTk
+	from  PIL import ImageOps
+	import pyperclip
+	from serial import Serial, SerialException
+	from time import sleep
+	import win32com.client
+	import tkinter as tk
+	import customtkinter as Ctk
+	from tkinterdnd2 import TkinterDnD, DND_ALL
+	import webcolors
 
 class Tk(Ctk.CTk, TkinterDnD.DnDWrapper):
     def __init__(self, *args, **kwargs):
