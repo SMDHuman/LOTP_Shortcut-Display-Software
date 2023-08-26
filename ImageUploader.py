@@ -328,7 +328,27 @@ class App(Tk):
 		pass
 
 	def uploadImages(self):
-		pass
+
+		com = Serial(self.ports['USB Seri Cihaz'], 9600)
+		for i in range(12):   
+			png = Image.open(f"images/{11-i}.png").convert('RGBA').resize((16, 16), 0)   
+			png = ImageOps.flip(png)      
+			png = ImageOps.mirror(png) 
+
+			background = Image.new('RGBA', (16, 16), self.selectedBtColor)
+			alpha_composite = Image.alpha_composite(background, png)
+			buffer = []
+			for y in range(alpha_composite.height):
+				for x in range(alpha_composite.width):
+					color = color565(*alpha_composite.getpixel((x, y)))
+					buffer.append(color >> 8)
+					buffer.append(color & 0xff)
+
+			com.write(bytearray([1]))
+			com.write(bytearray([i]))
+			com.write(bytearray(buffer))
+			com.read(1)     
+			print("Images:", i)
 
 	def uploadAll(self):
 		pass
