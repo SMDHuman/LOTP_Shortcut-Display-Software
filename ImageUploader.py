@@ -308,10 +308,11 @@ class App(Tk):
 		self.getPathForButton(event)
 
 	def getPathForButton(self, event):
-		print(event.data)
-		print(self.hoverButton)
 
-		png = Image.open(event.data).convert('RGBA').resize((16, 16), 0)
+		path = event.data.replace("{", "")
+		path = path.replace("}", "")
+
+		png = Image.open(path).convert('RGBA').resize((16, 16), 0)
 
 		background = Image.new('RGBA', (16, 16), self.selectedBtColor)
 		alpha_composite = Image.alpha_composite(background, png).resize((100, 100), 0)
@@ -333,8 +334,8 @@ class App(Tk):
 		self.uploadProgressBar.grid(row = 2, column=3, padx=10, pady=(0, 10))
 		self.update_idletasks()
 
-		com = Serial(self.devicePortEntry.get().split(" ")[-1], 9600)
 		def sendit():
+			com = Serial(self.devicePortEntry.get().split(" ")[-1], 9600, timeout=1)
 			for i in range(12):   
 				self.uploadProgressBar.set(i/11)
 				self.update_idletasks()
