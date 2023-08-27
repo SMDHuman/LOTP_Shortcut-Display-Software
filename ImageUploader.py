@@ -1,4 +1,5 @@
 import os
+from threading import Thread
 
 try:
 	from PIL import Image, ImageTk
@@ -150,9 +151,9 @@ class App(Tk):
 		self.updateAllButton.grid(row=0, column = 2, padx=10, pady=10, rowspan = 3)
 
 		self.uploadLabel = Ctk.CTkLabel(self.functionsFrame, text="Upload In Progress", font = Ctk.CTkFont(family='Helvetica', size=20))
-		#self.uploadLabel.grid(row = 1, column = 3, padx=10, pady=(10, 0))
 		self.uploadProgressBar = Ctk.CTkProgressBar(self.functionsFrame)
 		self.uploadProgressBar.set(0)
+		#self.uploadLabel.grid(row = 1, column = 3, padx=10, pady=(10, 0))
 		#self.uploadProgressBar.grid(row = 2, column=3, padx=10, pady=(0, 10))
 
 	def backgroundEntered(self, event):
@@ -328,27 +329,39 @@ class App(Tk):
 		pass
 
 	def uploadImages(self):
+		self.uploadLabel.grid(row = 1, column = 3, padx=10, pady=(10, 0))
+		self.uploadProgressBar.grid(row = 2, column=3, padx=10, pady=(0, 10))
+		self.update_idletasks()
 
-		com = Serial(self.ports['USB Seri Cihaz'], 9600)
-		for i in range(12):   
-			png = Image.open(f"images/{11-i}.png").convert('RGBA').resize((16, 16), 0)   
-			png = ImageOps.flip(png)      
-			png = ImageOps.mirror(png) 
+		com = Serial(self.devicePortEntry.get().split(" ")[-1], 9600)
+		def sendit():
+			for i in range(12):   
+				self.uploadProgressBar.set(i/11)
+				self.update_idletasks()
+				png = Image.open(f"images/{11-i}.png").convert('RGBA').resize((16, 16), 0)   
+				png = ImageOps.flip(png)      
+				png = ImageOps.mirror(png) 
 
-			background = Image.new('RGBA', (16, 16), self.selectedBtColor)
-			alpha_composite = Image.alpha_composite(background, png)
-			buffer = []
-			for y in range(alpha_composite.height):
-				for x in range(alpha_composite.width):
-					color = color565(*alpha_composite.getpixel((x, y)))
-					buffer.append(color >> 8)
-					buffer.append(color & 0xff)
+				background = Image.new('RGBA', (16, 16), self.selectedBtColor)
+				alpha_composite = Image.alpha_composite(background, png)
+				buffer = []
+				for y in range(alpha_composite.height):
+					for x in range(alpha_composite.width):
+						color = color565(*alpha_composite.getpixel((x, y)))
+						buffer.append(color >> 8)
+						buffer.append(color & 0xff)
 
-			com.write(bytearray([1]))
-			com.write(bytearray([i]))
-			com.write(bytearray(buffer))
-			com.read(1)     
-			print("Images:", i)
+				com.write(bytearray([1]))
+				com.write(bytearray([i]))
+				com.write(bytearray(buffer))
+				com.read(1)     
+				print("Images:", i)
+			com.close()
+			self.uploadLabel.grid_forget()
+			self.uploadProgressBar.grid_forget()
+
+		sendThread = Thread(target=sendit, args=())
+		sendThread.start()
 
 	def uploadAll(self):
 		pass
@@ -404,16 +417,6 @@ KEY_F22 = 0xF9
 KEY_F23 = 0xFA
 KEY_F24 = 0xFB
 
-port = []
-ports = {}
-wmi = win32com.client.GetObject("winmgmts:")
-for serial in wmi.InstancesOf("Win32_SerialPort"):
-	port = serial.Name.split(" (")
-	port[1] = port[1][:-1]
-	ports[port[0]] = port[1]
-
-if('USB Seri Cihaz' in ports):
-	com = Serial(ports['USB Seri Cihaz'], 9600);
 
 def color565(red, green, blue, *args):
 	if(len(args) > 0 and args[0] < 127):
